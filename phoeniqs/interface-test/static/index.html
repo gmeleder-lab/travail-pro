@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Banc de test Phoeniqs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="entete ecran">
+    <h1>Banc de test Phoeniqs</h1>
+    <p>Testez un cas d'usage sur un modèle : un prompt, puis jusqu'à deux re-prompts.</p>
+  </header>
+
+  <main>
+    <div id="bandeau" class="bandeau ecran" hidden></div>
+
+    <section class="carte ecran" aria-labelledby="titre-cas">
+      <h2 id="titre-cas">1. Cas d'usage</h2>
+      <div class="grille">
+        <label>Intitulé du cas d'usage <span class="facultatif">(facultatif)</span>
+          <input id="intitule" type="text" placeholder="Ex. : simplifier un texte en FALC" maxlength="200">
+        </label>
+        <label>Testeur·euse <span class="facultatif">(facultatif)</span>
+          <input id="testeur" type="text" maxlength="100" autocomplete="name">
+        </label>
+      </div>
+      <label>Modèle
+        <select id="modele"></select>
+      </label>
+      <p id="note-modele" class="aide">Le modèle reste le même pour toute la séquence.</p>
+      <details>
+        <summary>Consigne de cadrage envoyée au modèle</summary>
+        <textarea id="cadrage" rows="3" aria-label="Consigne de cadrage"></textarea>
+        <p class="aide">Elle précède votre prompt. Videz le champ pour tester sans cadrage.</p>
+      </details>
+    </section>
+
+    <section class="carte ecran" aria-labelledby="titre-seq">
+      <div class="ligne-titre">
+        <h2 id="titre-seq">2. Séquence de test</h2>
+        <label class="bascule"><input id="brut" type="checkbox"> Afficher le texte brut</label>
+      </div>
+
+      <ol id="echanges" class="echanges" aria-live="polite"></ol>
+
+      <form id="saisie" class="saisie">
+        <label for="prompt" id="libelle-prompt">Prompt</label>
+        <textarea id="prompt" rows="6" placeholder="Écrivez votre consigne, avec le texte ou les données à traiter."></textarea>
+        <div id="erreur" class="erreur" role="alert" hidden></div>
+        <div class="actions">
+          <button id="envoyer" type="submit" class="principal">Envoyer</button>
+          <span id="etat" class="etat" aria-live="polite"></span>
+        </div>
+      </form>
+      <p id="termine" class="termine" hidden>Séquence terminée : les 3 échanges sont faits.</p>
+    </section>
+
+    <section class="carte ecran pied" aria-labelledby="titre-fin">
+      <h2 id="titre-fin">3. Conserver le test</h2>
+      <div class="actions">
+        <button id="pdf" type="button" class="principal" disabled>Télécharger en PDF</button>
+        <button id="nouveau" type="button">Nouveau test</button>
+      </div>
+      <p class="aide">Le PDF s'enregistre depuis la fenêtre d'impression : choisissez « Enregistrer au format PDF » comme destination.</p>
+    </section>
+
+    <article id="rapport" class="rapport" aria-hidden="true"></article>
+  </main>
+
+  <script src="vendor/purify.min.js"></script>
+  <script src="vendor/marked.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

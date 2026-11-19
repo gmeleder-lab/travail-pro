@@ -1,0 +1,188 @@
+:root {
+  --fond: #f4f5f7;
+  --carte: #ffffff;
+  --texte: #1c2330;
+  --discret: #5b6472;
+  --bord: #d5d9e0;
+  --accent: #1f5fbf;
+  --accent-texte: #ffffff;
+  --prompt: #eef3fb;
+  --alerte-fond: #fdecec;
+  --alerte-texte: #8a1c1c;
+  --info-fond: #fff6dd;
+  --info-texte: #5c4500;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #14171c;
+    --carte: #1d2128;
+    --texte: #e7eaef;
+    --discret: #a0a8b5;
+    --bord: #363c47;
+    --accent: #6ea3f2;
+    --accent-texte: #0d1420;
+    --prompt: #232b38;
+    --alerte-fond: #3a1d1d;
+    --alerte-texte: #ffb4b4;
+    --info-fond: #3a3115;
+    --info-texte: #ffe08a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.entete, main { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+.entete { padding-top: 28px; }
+.entete h1 { margin: 0 0 4px; font-size: 1.6rem; }
+.entete p { margin: 0 0 20px; color: var(--discret); }
+main { padding-bottom: 48px; }
+
+.carte {
+  background: var(--carte);
+  border: 1px solid var(--bord);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.carte h2 { margin: 0 0 14px; font-size: 1.1rem; }
+
+.ligne-titre { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.bascule { font-size: 0.9rem; color: var(--discret); display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 400; }
+
+.grille { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+@media (max-width: 600px) { .grille { grid-template-columns: 1fr; } }
+
+label { display: block; font-weight: 600; font-size: 0.92rem; margin-bottom: 12px; }
+.facultatif { font-weight: 400; color: var(--discret); }
+
+input[type="text"], select, textarea {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 9px 10px;
+  font: inherit;
+  color: var(--texte);
+  background: var(--carte);
+  border: 1px solid var(--bord);
+  border-radius: 6px;
+}
+textarea { resize: vertical; min-height: 70px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+select:disabled, textarea:disabled, input:disabled { opacity: 0.7; }
+
+details { margin-top: 4px; }
+summary { cursor: pointer; font-size: 0.92rem; color: var(--discret); }
+.aide { margin: 6px 0 0; font-size: 0.86rem; color: var(--discret); }
+
+.bandeau {
+  background: var(--info-fond);
+  color: var(--info-texte);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.bandeau code { font-size: 0.9em; }
+
+.echanges { list-style: none; margin: 0; padding: 0; }
+.echanges > li { margin-bottom: 18px; }
+.etiquette {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--discret);
+  margin: 0 0 4px;
+}
+.bulle-prompt {
+  background: var(--prompt);
+  border-radius: 8px;
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-bottom: 12px;
+}
+.bulle-reponse {
+  border: 1px solid var(--bord);
+  border-radius: 8px;
+  padding: 4px 14px;
+  overflow-x: auto;
+  overflow-wrap: break-word;
+}
+.bulle-reponse.brut { white-space: pre-wrap; padding: 12px 14px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.88rem; }
+
+.rendu h1, .rendu h2, .rendu h3, .rendu h4 { margin: 0.9em 0 0.4em; line-height: 1.25; }
+.rendu h1 { font-size: 1.3rem; }
+.rendu h2 { font-size: 1.15rem; }
+.rendu h3, .rendu h4 { font-size: 1rem; }
+.rendu p, .rendu ul, .rendu ol, .rendu blockquote, .rendu pre, .rendu table { margin: 0.6em 0; }
+.rendu ul, .rendu ol { padding-left: 1.4em; }
+.rendu blockquote { border-left: 3px solid var(--bord); padding-left: 12px; color: var(--discret); margin-left: 0; }
+.rendu code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.88em; background: var(--prompt); padding: 1px 4px; border-radius: 4px; }
+.rendu pre { background: var(--prompt); padding: 10px 12px; border-radius: 6px; overflow-x: auto; }
+.rendu pre code { background: none; padding: 0; }
+.rendu table { border-collapse: collapse; }
+.rendu th, .rendu td { border: 1px solid var(--bord); padding: 5px 9px; text-align: left; vertical-align: top; }
+.rendu img { max-width: 100%; }
+.rendu hr { border: 0; border-top: 1px solid var(--bord); }
+
+.saisie label { margin-bottom: 0; }
+.actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 6px;
+  border: 1px solid var(--bord);
+  background: var(--carte);
+  color: var(--texte);
+  cursor: pointer;
+}
+button.principal { background: var(--accent); border-color: var(--accent); color: var(--accent-texte); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.etat { color: var(--discret); font-size: 0.92rem; }
+.erreur {
+  background: var(--alerte-fond);
+  color: var(--alerte-texte);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 10px;
+}
+.termine { margin: 0; font-weight: 600; }
+.pied .aide { margin-top: 10px; }
+
+/* Le rapport n'apparaît qu'à l'impression (enregistrement en PDF). */
+.rapport { display: none; }
+
+@media print {
+  :root {
+    --fond: #fff; --carte: #fff; --texte: #000; --discret: #444;
+    --bord: #bbb; --prompt: #f0f2f5;
+  }
+  @page { margin: 18mm 16mm; }
+  body { background: #fff; font-size: 10.5pt; }
+  .ecran { display: none !important; }
+  main { max-width: none; padding: 0; }
+  .rapport { display: block; }
+  .rapport h1 { font-size: 16pt; margin: 0 0 10pt; }
+  .rapport h2 { font-size: 12pt; margin: 16pt 0 6pt; border-bottom: 1px solid #bbb; padding-bottom: 3pt; break-after: avoid; }
+  .rapport .etiquette { margin-top: 8pt; break-after: avoid; }
+  .rapport table.fiche { border-collapse: collapse; width: 100%; }
+  .rapport table.fiche th, .rapport table.fiche td { border: 1px solid #bbb; padding: 4pt 7pt; text-align: left; vertical-align: top; }
+  .rapport table.fiche th { width: 32%; background: #f0f2f5; font-weight: 600; }
+  .rapport .bulle-prompt, .rapport .rendu pre, .rapport .rendu code { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rapport .bulle-reponse { border: 0; border-left: 2px solid #bbb; border-radius: 0; overflow: visible; }
+  .rapport .rendu pre { white-space: pre-wrap; overflow: visible; }
+  .rapport .rendu tr, .rapport .rendu li { break-inside: avoid; }
+  .rapport .mention { margin-top: 18pt; font-size: 9pt; color: #444; }
+}
