@@ -1,0 +1,6 @@
+Sujet,Point d'attention
+Provenance chinoise,"Données hébergées en Suisse, mais biais possibles sur des sujets historiques ou politiques : réserver DeepSeek, Qwen et GLM aux tâches techniques. Les briques RAG/OCR ne génèrent pas de contenu destiné aux élèves, risque négligeable."
+Public mineur,Aucun modèle de modération (guardrail) n'est proposé : prévoir une couche de filtrage pour l'usage direct par les élèves.
+Licences,AGPL 3.0 de MinerU à faire valider (pas de problème en simple appel d'API).
+Stabilité,Phoeniqs peut modifier ou retirer un modèle sans préavis : à prendre en compte pour des scénarios pédagogiques sur une année scolaire.
+Coûts,"Prix exprimés en crédits Phoeniqs, susceptibles de changer. Conversion en CHF à obtenir auprès du fournisseur."

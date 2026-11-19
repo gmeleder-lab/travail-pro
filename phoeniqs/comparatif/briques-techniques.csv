@@ -1,0 +1,6 @@
+Modèle,Rôle proposé,Origine,Licence,Coût entrée,Coût sortie,Unité,Usage pédagogique
+BGE-M3,Embeddings,Chine (BAAI),MIT,"0,431",,crédits/M tokens,"Indexer les plans d'études, supports de cours, règlements"
+BGE Reranker v2,Classement des résultats,Chine (BAAI),Apache 2.0,"0,008",,crédits/M tokens,Améliorer la pertinence des réponses du RAG
+DeepSeek OCR,OCR,Chine,MIT,"0,385","1,539",crédits/M tokens,Numériser des documents scannés
+MinerU 2.5,Analyse de mise en page,Chine (OpenDataLab),AGPL 3.0,"0,380","0,230",crédits/M tokens,"PDF complexes (tableaux, formules)"
+Whisper Large v3,Transcription,"USA (OpenAI, poids ouverts)",Apache 2.0,"0,006",,crédits/minute,"Sous-titrage, accessibilité, oral en langues étrangères"
