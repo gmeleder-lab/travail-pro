@@ -72,6 +72,8 @@ GLM 5 arrive en tête ou à égalité sur 12 des 14 cas. Les notes sont sur 5, e
 
 ## Comparaison des modèles
 
+![GLM 5 a la meilleure note (4,5/5), mais répond 4 à 8 fois plus lentement : note moyenne et temps de réponse moyen par modèle, 42 réponses](graphique-qualite-vs-temps.png)
+
 | Modèle | Note moyenne (/5) | Temps de réponse moyen (s) | Nombre de tests |
 | --- | --- | --- | --- |
 | glm5 | 4,46 | 37,8 | 14 |
@@ -81,7 +83,7 @@ GLM 5 arrive en tête ou à égalité sur 12 des 14 cas. Les notes sont sur 5, e
 | apertus-v15-70b | 2,75 | 8,9 | 10 |
 | glm5-flash | 5,0 | 4,8 | 1 |
 
-*Données du graphique « note moyenne et temps de réponse moyen par modèle, 42 réponses (novembre 2026) », notes attribuées par Claude, à valider. Aussi disponibles dans `comparaison-modeles.csv`.*
+*Données du graphique. Les temps viennent de [resultats.csv](resultats.csv) (42 réponses, novembre 2026) ; les notes sont attribuées par Claude, à valider. Aussi disponibles dans `comparaison-modeles.csv`.*
 
 deepseek-v4-flash et gpt-oss-120b offrent le meilleur compromis entre vitesse et qualité. La note de glm5-flash repose sur un seul test, et celle de deepseek-v32 sur quatre.
 
