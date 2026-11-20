@@ -6,6 +6,7 @@ la clé d'API reste sur cette machine et n'arrive jamais dans le navigateur.
 Aucune dépendance : la bibliothèque standard de Python 3.9+ suffit.
 """
 
+import hmac
 import json
 import os
 import re
@@ -76,6 +77,42 @@ BASE = os.environ.get("PHOENIQS_BASE_URL", "https://maas.phoeniqs.com/v1").rstri
 HOTE = os.environ.get("HOTE", "127.0.0.1")
 PORT = int(os.environ.get("PORT", "8765"))
 DEMO = os.environ.get("PHOENIQS_DEMO", "") == "1"
+# Derrière le répartiteur de l'hébergeur, l'adresse du visiteur est dans X-Forwarded-For.
+DERRIERE_PROXY = os.environ.get("DERRIERE_PROXY", "") == "1"
+QUOTA_JOUR = int(os.environ.get("QUOTA_JOUR", "100"))   # demandes par testeur et par jour
+MAX_ECHECS = 8             # codes erronés tolérés par adresse…
+FENETRE_ECHECS_S = 600     # …sur dix minutes
+LOCAL = HOTE in ("127.0.0.1", "localhost", "::1")
+
+
+def charger_codes():
+    """Codes d'accès personnels : {code: nom du testeur}.
+
+    Sources : le fichier codes.txt (une ligne « Nom ; code ») et la variable
+    CODES_ACCES (« Nom:code » séparés par des points-virgules).
+    """
+    codes = {}
+    fichier = DOSSIER / "codes.txt"
+    lignes = []
+    if fichier.exists():
+        for ligne in fichier.read_text(encoding="utf-8").splitlines():
+            ligne = ligne.strip()
+            if ligne and not ligne.startswith("#") and ";" in ligne:
+                lignes.append(ligne.rsplit(";", 1))
+    for element in os.environ.get("CODES_ACCES", "").split(";"):
+        if ":" in element:
+            lignes.append(element.rsplit(":", 1))
+    for nom, code in lignes:
+        nom, code = nom.strip(), code.strip()
+        if nom and len(code) >= 8:
+            codes[code] = nom
+    return codes
+
+
+CODES = charger_codes()
+_verrou = threading.Lock()
+_echecs = {}        # adresse -> instants des codes erronés
+_compteurs = {}     # (jour, testeur) -> nombre de demandes
 
 _cache_modeles = {"quand": 0.0, "liste": None}
 
@@ -211,10 +248,23 @@ def valider(corps):
 
 
 class Gestionnaire(BaseHTTPRequestHandler):
-    server_version = "BancTestPhoeniqs/1.0"
+    server_version = "BancTestPhoeniqs/1.1"
+    sys_version = ""
 
     def log_message(self, format, *args):  # journal plus discret
-        sys.stderr.write("%s  %s\n" % (time.strftime("%H:%M:%S"), format % args))
+        sys.stderr.write("%s  %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S"), format % args))
+
+    def entetes_securite(self):
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        # Les réponses des modèles peuvent contenir du HTML : aucun script ni
+        # ressource externe ne doit se charger depuis la page.
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
+            "script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+        )
 
     def envoyer_json(self, code, objet):
         donnees = json.dumps(objet, ensure_ascii=False).encode("utf-8")
@@ -222,13 +272,69 @@ class Gestionnaire(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(donnees)))
         self.send_header("Cache-Control", "no-store")
+        self.entetes_securite()
         self.end_headers()
         self.wfile.write(donnees)
 
+    def adresse(self):
+        if DERRIERE_PROXY:
+            transmis = self.headers.get("X-Forwarded-For", "")
+            if transmis:
+                return transmis.split(",")[-1].strip()
+        return self.client_address[0]
+
+    def testeur(self):
+        """Renvoie le nom du testeur, "" en accès libre, ou None après avoir refusé."""
+        if not CODES:
+            return ""
+        adresse, maintenant = self.adresse(), time.time()
+        with _verrou:
+            recents = [t for t in _echecs.get(adresse, []) if maintenant - t < FENETRE_ECHECS_S]
+            _echecs[adresse] = recents
+            bloque = len(recents) >= MAX_ECHECS
+        if bloque:
+            self.envoyer_json(429, {"erreur": "Trop de codes erronés. Réessayez dans dix minutes."})
+            return None
+        recu = self.headers.get("X-Code-Acces", "").strip()
+        nom = None
+        for code, candidat in CODES.items():  # comparaison à temps constant
+            if hmac.compare_digest(code.encode("utf-8"), recu.encode("utf-8")):
+                nom = candidat
+        if nom is None:
+            if recu:
+                with _verrou:
+                    _echecs.setdefault(adresse, []).append(maintenant)
+                self.log_message("code d'accès refusé pour %s", adresse)
+            self.envoyer_json(401, {
+                "accesRequis": True,
+                "erreur": "Ce code d'accès n'est pas reconnu." if recu else "Un code d'accès est nécessaire.",
+            })
+            return None
+        return nom
+
+    def quota_depasse(self, nom):
+        if not nom or QUOTA_JOUR <= 0:
+            return False
+        cle = (time.strftime("%Y-%m-%d"), nom)
+        with _verrou:
+            for ancienne in [k for k in _compteurs if k[0] != cle[0]]:
+                del _compteurs[ancienne]
+            if _compteurs.get(cle, 0) >= QUOTA_JOUR:
+                return True
+            _compteurs[cle] = _compteurs.get(cle, 0) + 1
+        return False
+
     def do_GET(self):
         chemin = self.path.split("?", 1)[0]
+        if chemin == "/api/sante":
+            self.envoyer_json(200, {"etat": "ok"})
+            return
         if chemin == "/api/config":
+            nom = self.testeur()
+            if nom is None:
+                return
             self.envoyer_json(200, {
+                "testeur": nom,
                 "modeles": liste_modeles(),
                 "cadrage": CADRAGE_PAR_DEFAUT,
                 "maxPrompts": MAX_PROMPTS,
@@ -247,6 +353,7 @@ class Gestionnaire(BaseHTTPRequestHandler):
         self.send_header("Content-Type", TYPES.get(fichier.suffix, "application/octet-stream"))
         self.send_header("Content-Length", str(len(donnees)))
         self.send_header("Cache-Control", "no-cache")
+        self.entetes_securite()
         self.end_headers()
         self.wfile.write(donnees)
 
@@ -259,6 +366,9 @@ class Gestionnaire(BaseHTTPRequestHandler):
         if origine and origine.split("//", 1)[-1] != self.headers.get("Host"):
             self.envoyer_json(403, {"erreur": "Demande refusée."})
             return
+        nom = self.testeur()
+        if nom is None:
+            return
         try:
             taille = int(self.headers.get("Content-Length", "0"))
             if taille <= 0 or taille > 4 * MAX_CARACTERES:
@@ -267,6 +377,13 @@ class Gestionnaire(BaseHTTPRequestHandler):
         except (ValueError, UnicodeDecodeError) as e:
             message = str(e) if isinstance(e, ValueError) and "JSON" not in type(e).__name__ else "Demande invalide."
             self.envoyer_json(400, {"erreur": message})
+            return
+
+        if self.quota_depasse(nom):
+            self.envoyer_json(429, {
+                "erreur": "Vous avez atteint la limite de %d demandes pour aujourd'hui. "
+                          "Vous pourrez reprendre demain." % QUOTA_JOUR
+            })
             return
 
         debut = time.monotonic()
@@ -290,6 +407,7 @@ class Gestionnaire(BaseHTTPRequestHandler):
             if not texte.strip():
                 self.envoyer_json(502, {"erreur": "Le modèle a renvoyé une réponse vide. Réessayez."})
                 return
+        self.log_message("réponse de %s en %.1f s pour %s", modele, time.monotonic() - debut, nom or "accès libre")
         self.envoyer_json(200, {
             "contenu": texte,
             "secondes": round(time.monotonic() - debut, 1),
@@ -298,6 +416,13 @@ class Gestionnaire(BaseHTTPRequestHandler):
 
 
 def main():
+    if not LOCAL and not CODES and not DEMO and os.environ.get("ACCES_LIBRE", "") != "1":
+        sys.exit(
+            "Le serveur est ouvert au réseau (HOTE=%s) mais aucun code d'accès n'est défini : "
+            "n'importe qui pourrait consommer les crédits de la clé.\n"
+            "Créez des codes avec « python3 generer_codes.py Nom », ou ajoutez ACCES_LIBRE=1 "
+            "pour un réseau de confiance." % HOTE
+        )
     serveur = ThreadingHTTPServer((HOTE, PORT), Gestionnaire)
     adresse = "http://%s:%d" % ("localhost" if HOTE in ("127.0.0.1", "0.0.0.0") else HOTE, PORT)
     print("Banc de test Phoeniqs : %s" % adresse)
@@ -305,8 +430,10 @@ def main():
         print("Mode démonstration : aucun modèle n'est appelé.")
     elif not CLE:
         print("Attention : PHOENIQS_API_KEY est absente. Créez le fichier .env (voir README).")
+    if CODES:
+        print("Accès par code personnel : %d testeur(s), %d demandes par jour chacun." % (len(CODES), QUOTA_JOUR))
     print("Pour arrêter : Ctrl+C, ou fermez cette fenêtre.")
-    if os.environ.get("SANS_NAVIGATEUR", "") != "1":
+    if LOCAL and os.environ.get("SANS_NAVIGATEUR", "") != "1":
         threading.Timer(0.6, webbrowser.open, args=(adresse,)).start()
     try:
         serveur.serve_forever()

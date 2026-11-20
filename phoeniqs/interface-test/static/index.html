@@ -15,6 +15,21 @@
   <main>
     <div id="bandeau" class="bandeau ecran" hidden></div>
 
+    <section id="acces" class="carte ecran" aria-labelledby="titre-acces" hidden>
+      <h2 id="titre-acces">Code d'accès</h2>
+      <form id="form-acces">
+        <label for="code">Saisissez le code personnel qui vous a été transmis
+          <input id="code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX">
+        </label>
+        <div id="erreur-acces" class="erreur" role="alert" hidden></div>
+        <div class="actions">
+          <button type="submit" class="principal">Entrer</button>
+        </div>
+      </form>
+    </section>
+
+    <div id="outil" hidden>
+
     <section class="carte ecran" aria-labelledby="titre-cas">
       <h2 id="titre-cas">1. Cas d'usage</h2>
       <div class="grille">
@@ -64,6 +79,9 @@
       </div>
       <p class="aide">Le PDF s'enregistre depuis la fenêtre d'impression : choisissez « Enregistrer au format PDF » comme destination.</p>
     </section>
+
+    <p id="session" class="aide ecran" hidden><span id="session-nom"></span> <button id="deconnexion" type="button" class="lien">Changer de code</button></p>
+    </div>
 
     <article id="rapport" class="rapport" aria-hidden="true"></article>
   </main>

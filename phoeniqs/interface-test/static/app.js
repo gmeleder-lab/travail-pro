@@ -1,6 +1,7 @@
 "use strict";
 
 const CLE_STOCKAGE = "banc-test-phoeniqs-v1";
+const CLE_CODE = "banc-test-phoeniqs-code";
 const $ = (id) => document.getElementById(id);
 
 const el = {
@@ -10,12 +11,39 @@ const el = {
   libelle: $("libelle-prompt"), prompt: $("prompt"), erreur: $("erreur"),
   envoyer: $("envoyer"), etat: $("etat"), termine: $("termine"),
   pdf: $("pdf"), nouveau: $("nouveau"), rapport: $("rapport"),
+  acces: $("acces"), formAcces: $("form-acces"), code: $("code"), erreurAcces: $("erreur-acces"),
+  outil: $("outil"), session: $("session"), sessionNom: $("session-nom"), deconnexion: $("deconnexion"),
 };
 
 let maxPrompts = 3;
 let enCours = false;
 // Une séquence = un cas d'usage : jusqu'à 3 échanges {prompt, reponse, secondes, heure}.
 let seq = sequenceVide();
+
+// Code d'accès personnel (hébergement en ligne). Vide en usage local.
+let codeAcces = "";
+try { codeAcces = localStorage.getItem(CLE_CODE) || ""; } catch (e) { /* stockage indisponible */ }
+
+class AccesRefuse extends Error {}
+
+// Appelle le serveur avec le code d'accès ; lève AccesRefuse si le code est absent ou refusé.
+async function api(chemin, options) {
+  const o = Object.assign({ headers: {} }, options);
+  o.headers = Object.assign({}, o.headers, codeAcces ? { "X-Code-Acces": codeAcces } : {});
+  const r = await fetch(chemin, o);
+  let d = null;
+  try { d = await r.json(); } catch (e) { /* réponse non JSON */ }
+  if (r.status === 401 && d && d.accesRequis) throw new AccesRefuse(d.erreur || "");
+  return { r, d };
+}
+
+function demanderCode(message) {
+  el.outil.hidden = true;
+  el.acces.hidden = false;
+  el.erreurAcces.textContent = message || "";
+  el.erreurAcces.hidden = !message;
+  el.code.focus();
+}
 
 function sequenceVide() {
   return { intitule: "", testeur: "", modele: "", cadrage: "", debut: null, echanges: [] };
@@ -262,13 +290,11 @@ async function envoyer(evenement) {
   const minuterie = setInterval(tic, 1000);
 
   try {
-    const r = await fetch("/api/chat", {
+    const { r, d } = await api("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model: seq.modele, messages: messagesPourApi(texte) }),
     });
-    let d = null;
-    try { d = await r.json(); } catch (e) { /* réponse non JSON */ }
     if (!r.ok || !d || typeof d.contenu !== "string") {
       throw new Error((d && d.erreur) || "Le serveur a répondu par une erreur " + r.status + ".");
     }
@@ -276,6 +302,10 @@ async function envoyer(evenement) {
     el.prompt.value = "";
   } catch (e) {
     // Le prompt reste dans le champ : un échec ne consomme pas d'échange.
+    if (e instanceof AccesRefuse) {
+      sauvegarder();
+      demanderCode("Votre code d'accès n'est plus valide. Saisissez-le à nouveau ; votre séquence est conservée.");
+    }
     montrerErreur(e instanceof TypeError
       ? "Le serveur local ne répond pas. Vérifiez qu'il est toujours lancé, puis réessayez."
       : e.message);
@@ -402,9 +432,19 @@ async function demarrer() {
   const restaure = restaurer();
   let config;
   try {
-    const r = await fetch("/api/config");
-    config = await r.json();
+    config = (await api("/api/config")).d;
+    if (!config || !config.modeles) throw new Error((config && config.erreur) || "");
   } catch (e) {
+    if (e instanceof AccesRefuse) {
+      const refuse = !!codeAcces;
+      codeAcces = "";
+      demanderCode(refuse ? e.message : "");
+      return;
+    }
+    if (!(e instanceof TypeError) && e.message) {  // p. ex. trop de codes erronés
+      demanderCode(e.message);
+      return;
+    }
     el.bandeau.textContent = "Le serveur local ne répond pas. Relancez-le, puis rechargez cette page.";
     el.bandeau.hidden = false;
     el.envoyer.disabled = true;
@@ -414,6 +454,16 @@ async function demarrer() {
   remplirModeles(config.modeles, seq.modele);
   el.cadrage.value = restaure && seq.echanges.length ? seq.cadrage : config.cadrage;
   el.intitule.value = seq.intitule;
+  el.acces.hidden = true;
+  el.outil.hidden = false;
+  if (config.testeur) {
+    // Le nom vient du code d'accès : il n'est pas modifiable.
+    try { localStorage.setItem(CLE_CODE, codeAcces); } catch (e) { /* stockage indisponible */ }
+    seq.testeur = config.testeur;
+    el.testeur.readOnly = true;
+    el.sessionNom.textContent = "Connecté·e : " + config.testeur + ".";
+    el.session.hidden = false;
+  }
   el.testeur.value = seq.testeur;
 
   if (config.demo) {
@@ -426,6 +476,18 @@ async function demarrer() {
   afficher();
 }
 
+el.formAcces.addEventListener("submit", (e) => {
+  e.preventDefault();
+  codeAcces = el.code.value.trim().toUpperCase();
+  if (!codeAcces) { demanderCode("Saisissez votre code d'accès."); return; }
+  el.code.value = "";
+  demarrer();
+});
+el.deconnexion.addEventListener("click", () => {
+  codeAcces = "";
+  try { localStorage.removeItem(CLE_CODE); } catch (e) { /* stockage indisponible */ }
+  demanderCode("");
+});
 el.saisie.addEventListener("submit", envoyer);
 el.prompt.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) el.saisie.requestSubmit();
