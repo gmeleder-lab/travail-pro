@@ -90,6 +90,42 @@ function blocReponse(texte, brut) {
   return div;
 }
 
+// Ramène l'usage renvoyé par l'API à trois nombres : tokens envoyés, reçus, et
+// part du raisonnement interne dans les tokens reçus. Renvoie null si inconnu.
+function tokensDe(usage) {
+  if (!usage || typeof usage !== "object") return null;
+  const nombre = (v) => (Number.isFinite(Number(v)) && v !== null && v !== "" ? Number(v) : null);
+  const envoyes = nombre(usage.prompt_tokens);
+  const recus = nombre(usage.completion_tokens);
+  if (envoyes === null && recus === null) return null;
+  const details = usage.completion_tokens_details;
+  const raisonnement = details && typeof details === "object" ? nombre(details.reasoning_tokens) : null;
+  return { envoyes: envoyes || 0, recus: recus || 0, raisonnement: raisonnement || 0 };
+}
+
+function milliers(n) {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f");
+}
+
+function texteTokens(t) {
+  if (!t) return "";
+  return milliers(t.envoyes) + " tokens envoyés, " + milliers(t.recus) + " reçus"
+    + (t.raisonnement ? " (dont " + milliers(t.raisonnement) + " de raisonnement)" : "");
+}
+
+function totalTokens() {
+  const somme = { envoyes: 0, recus: 0, raisonnement: 0 };
+  let connus = 0;
+  for (const e of seq.echanges) {
+    if (!e.tokens) continue;
+    connus++;
+    somme.envoyes += e.tokens.envoyes;
+    somme.recus += e.tokens.recus;
+    somme.raisonnement += e.tokens.raisonnement;
+  }
+  return connus ? somme : null;
+}
+
 function blocEchange(e, i, brut) {
   const frag = document.createDocumentFragment();
   const t1 = document.createElement("p");
@@ -102,6 +138,12 @@ function blocEchange(e, i, brut) {
   t2.className = "etiquette";
   t2.textContent = "Réponse de " + nomCourt(seq.modele) + " (" + String(e.secondes).replace(".", ",") + " s)";
   frag.append(t1, p, t2, blocReponse(e.reponse, brut));
+  if (e.tokens) {
+    const conso = document.createElement("p");
+    conso.className = "conso";
+    conso.textContent = "Consommation : " + texteTokens(e.tokens) + ".";
+    frag.append(conso);
+  }
   return frag;
 }
 
@@ -298,7 +340,7 @@ async function envoyer(evenement) {
     if (!r.ok || !d || typeof d.contenu !== "string") {
       throw new Error((d && d.erreur) || "Le serveur a répondu par une erreur " + r.status + ".");
     }
-    seq.echanges.push({ prompt: texte, reponse: d.contenu, secondes: d.secondes, heure: new Date().toISOString() });
+    seq.echanges.push({ prompt: texte, reponse: d.contenu, secondes: d.secondes, tokens: tokensDe(d.usage), heure: new Date().toISOString() });
     el.prompt.value = "";
   } catch (e) {
     // Le prompt reste dans le champ : un échec ne consomme pas d'échange.
@@ -340,6 +382,7 @@ function construireRapport() {
   r.append(h1);
 
   const total = seq.echanges.reduce((s, e) => s + (Number(e.secondes) || 0), 0);
+  const tokens = totalTokens();
   const toutes = seq.echanges.flatMap(notesDe);
   const lignes = [
     ["Cas d'usage", seq.intitule.trim() || "(non renseigné)"],
@@ -348,6 +391,7 @@ function construireRapport() {
     ["Date du test", formaterDate(seq.debut)],
     ["Nombre d'échanges", seq.echanges.length + " sur " + maxPrompts + " (1 prompt, " + (seq.echanges.length - 1) + " re-prompt" + (seq.echanges.length > 2 ? "s" : "") + ")"],
     ["Temps de réponse cumulé", total.toFixed(1).replace(".", ",") + " s"],
+    ["Consommation cumulée", tokens ? texteTokens(tokens) + ", soit " + milliers(tokens.envoyes + tokens.recus) + " tokens au total" : "(non communiquée)"],
     ["Note moyenne du testeur", toutes.length ? moyenne(toutes) + "/5 (" + toutes.length + " note" + (toutes.length > 1 ? "s" : "") + ")" : "(non noté)"],
     ["Consigne de cadrage", seq.cadrage.trim() || "(aucune)"],
   ];
