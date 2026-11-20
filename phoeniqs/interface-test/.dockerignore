@@ -1,0 +1,9 @@
+.env
+codes.txt
+__pycache__/
+*.pyc
+.DS_Store
+.git
+*.md
+lancer.command
+generer_codes.py
