@@ -13,6 +13,10 @@ Travail mené en novembre 2026 pour savoir si les modèles ouverts fournis par P
 | [comparaison-modeles.csv](comparaison-modeles.csv) | Note moyenne, temps de réponse moyen et nombre de tests par modèle (données du graphique du récapitulatif) | 05.11.2026 | idem |
 | [comparatif/](comparatif/README.md) | Comparatif des modèles retenus : rôle proposé, origine, licence, contexte, coûts, forces et limites ; briques techniques (RAG, OCR, audio) ; points d'attention | 03.11.2026 | [Google Sheets](https://docs.google.com/spreadsheets/d/1RqujDzxhwGJicVJ3l6PW0aNkEKWlEozExCiJGwEz8CE/edit) |
 
+## Tester un modèle soi-même
+
+Le dossier [interface-test/](interface-test/README.md) contient une page web pour tester un cas d'usage sur un modèle sans ligne de commande : un prompt, jusqu'à deux re-prompts, puis un export de la séquence en PDF.
+
 ## En bref
 
 - GLM 5 obtient la meilleure note moyenne (4,5/5 sur 14 tests), mais c'est le plus lent (38 s par réponse en moyenne).
