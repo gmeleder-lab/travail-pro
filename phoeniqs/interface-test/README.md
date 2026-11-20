@@ -6,7 +6,8 @@ Une page web pour tester un cas d'usage sur un modèle Phoeniqs, sans ligne de c
 
 1. **Cas d'usage** : intitulé et nom du testeur (facultatifs), choix du modèle. La consigne de cadrage envoyée au modèle est visible et modifiable.
 2. **Séquence de test** : un prompt, puis jusqu'à deux re-prompts, soit trois échanges au maximum. Le modèle reçoit tout l'historique à chaque re-prompt. Le modèle et le cadrage sont figés dès le premier envoi, pour que la séquence reste comparable.
-3. **PDF** : le bouton « Télécharger en PDF » ouvre la fenêtre d'impression du navigateur avec un rapport mis en page (cas d'usage, modèle, testeur, date, cadrage, chaque prompt et chaque réponse avec son temps). Il faut y choisir « Enregistrer au format PDF » comme destination. Le nom de fichier proposé contient le modèle, l'intitulé et la date.
+3. **Évaluation** : sous chaque réponse, le testeur peut noter quatre critères de 1 à 5 (exactitude, français, respect de la consigne, utilité en classe) et ajouter un commentaire. C'est la grille du récapitulatif de novembre 2026. La notation est facultative ; un second clic sur une note l'efface.
+4. **PDF** : le bouton « Télécharger en PDF » ouvre la fenêtre d'impression du navigateur avec un rapport mis en page (cas d'usage, modèle, testeur, date, cadrage, chaque prompt et chaque réponse avec son temps, les notes et les commentaires du testeur). Il faut y choisir « Enregistrer au format PDF » comme destination. Le nom de fichier proposé contient le modèle, l'intitulé et la date.
 
 À savoir :
 
