@@ -19,7 +19,7 @@ Une page web pour tester un cas d'usage sur un modèle Phoeniqs, sans ligne de c
 Il faut Python 3.9 ou plus récent (déjà présent sur la plupart des Mac). Aucune autre installation.
 
 1. Dans ce dossier, copiez `.env.example` et nommez la copie `.env`.
-2. Ouvrez `.env` avec un éditeur de texte et collez votre clé d'API Phoeniqs après `PHOENIQS_API_KEY=`.
+2. Ouvrez `.env` avec un éditeur de texte et collez votre clé d'API Phoeniqs après `PHOENIQS_API_KEY=`. La clé commence par `sk-` ; un identifiant de souscription ne fonctionne pas.
 
 Le fichier `.env` reste sur la machine : il est exclu de Git et la clé n'est jamais envoyée au navigateur.
 
@@ -51,7 +51,7 @@ Attention : il n'y a pas de mot de passe. Toute personne qui atteint cette adres
 - `serveur.py` sert la page et relaie les demandes vers l'API Phoeniqs (`https://maas.phoeniqs.com/v1`, compatible OpenAI). Il n'utilise que la bibliothèque standard de Python.
 - `static/` contient la page (`index.html`, `style.css`, `app.js`).
 - `static/vendor/` contient deux bibliothèques libres, copiées telles quelles : marked 15.0.12 (mise en forme Markdown) et DOMPurify 3.2.6 (nettoyage du HTML produit par les modèles).
-- La liste des modèles vient de l'API. Les six modèles évalués en novembre 2026 sont proposés en premier ; si l'API ne donne pas de liste, ils sont proposés seuls.
+- La liste des modèles vient de l'API. Les six modèles évalués en novembre 2026 sont proposés en premier ; si l'API ne donne pas de liste, ils sont proposés seuls. Les modèles qui ne répondent pas à un prompt texte (embeddings, classement, transcription, OCR, image) sont retirés de la liste, d'après leur nom.
 
 ## Limites
 
