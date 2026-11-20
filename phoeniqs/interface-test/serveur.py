@@ -8,6 +8,7 @@ Aucune dépendance : la bibliothèque standard de Python 3.9+ suffit.
 
 import json
 import os
+import re
 import ssl
 import sys
 import threading
@@ -35,6 +36,10 @@ MODELES_TESTES = [
     "inference-gpt-oss-120b",
     "inference-apertus-v15-70b",
 ]
+
+# Modèles qui ne répondent pas à un prompt texte (embeddings, classement,
+# transcription audio, OCR, génération d'image) : retirés de la liste.
+HORS_CONVERSATION = re.compile(r"bge|rerank|emb|whisper|ocr|miner|image|flix", re.I)
 
 CADRAGE_PAR_DEFAUT = (
     "Tu es un assistant pédagogique pour l'enseignement postobligatoire "
@@ -135,9 +140,17 @@ def liste_modeles():
         return {"testes": MODELES_TESTES, "autres": [], "source": "liste par défaut"}
     if _cache_modeles["liste"] and time.time() - _cache_modeles["quand"] < 600:
         return _cache_modeles["liste"]
-    try:
-        ids = sorted(m["id"] for m in appel_api("/models").get("data", []) if m.get("id"))
-    except (ErreurApi, KeyError, TypeError, AttributeError):
+    ids = None
+    for _ in range(2):  # un second essai couvre une coupure passagère au démarrage
+        try:
+            ids = sorted(
+                m["id"] for m in appel_api("/models").get("data", [])
+                if m.get("id") and not HORS_CONVERSATION.search(m["id"])
+            )
+            break
+        except (ErreurApi, KeyError, TypeError, AttributeError):
+            time.sleep(1)
+    if ids is None:
         return {"testes": MODELES_TESTES, "autres": [], "source": "liste par défaut"}
     resultat = {
         "testes": [m for m in MODELES_TESTES if m in ids],
