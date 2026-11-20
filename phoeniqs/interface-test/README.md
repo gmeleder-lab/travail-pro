@@ -45,14 +45,15 @@ PHOENIQS_DEMO=1 python3 serveur.py
 
 Par défaut, la page n'est accessible que depuis la machine qui a lancé le serveur, sans code d'accès.
 
-Pour une mise en ligne chez un hébergeur, avec un code personnel par testeur, suivez [DEPLOIEMENT.md](DEPLOIEMENT.md).
+Pour une mise en ligne chez Infomaniak, avec un code personnel par testeur, suivez le pas-à-pas de [DEPLOIEMENT.md](DEPLOIEMENT.md).
 
 Pour ouvrir la page aux autres postes du même réseau, créez d'abord des codes avec `python3 generer_codes.py "Nom"`, puis ajoutez `HOTE=0.0.0.0` dans `.env`. Les testeurs ouvrent `http://<adresse-IP-de-la-machine>:8765` et saisissent leur code. Sans code défini, le serveur refuse de s'ouvrir au réseau.
 
 ## Fonctionnement
 
 - `serveur.py` sert la page et relaie les demandes vers l'API Phoeniqs (`https://maas.phoeniqs.com/v1`, compatible OpenAI). Il n'utilise que la bibliothèque standard de Python.
-- `generer_codes.py` crée les codes d'accès personnels ; `Dockerfile` décrit le conteneur pour l'hébergement en ligne.
+- `serveur.js` est le même serveur en Node.js, sans dépendance, pour l'hébergement Node.js d'Infomaniak. Toute évolution du serveur doit être reportée dans les deux fichiers.
+- `generer_codes.py` crée les codes d'accès personnels ; `Dockerfile` décrit un conteneur pour un autre hébergeur.
 - `static/` contient la page (`index.html`, `style.css`, `app.js`).
 - `static/vendor/` contient deux bibliothèques libres, copiées telles quelles : marked 15.0.12 (mise en forme Markdown) et DOMPurify 3.2.6 (nettoyage du HTML produit par les modèles).
 - La liste des modèles vient de l'API. Les six modèles évalués en novembre 2026 sont proposés en premier ; si l'API ne donne pas de liste, ils sont proposés seuls. Les modèles qui ne répondent pas à un prompt texte (embeddings, classement, transcription, OCR, image) sont retirés de la liste, d'après leur nom.

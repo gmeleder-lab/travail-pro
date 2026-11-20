@@ -1,0 +1,13 @@
+{
+  "name": "banc-test-phoeniqs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interface de test des modèles Phoeniqs",
+  "main": "serveur.js",
+  "scripts": {
+    "start": "node serveur.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
