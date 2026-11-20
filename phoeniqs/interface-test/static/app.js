@@ -77,13 +77,129 @@ function blocEchange(e, i, brut) {
   return frag;
 }
 
+// Grille du récapitulatif de novembre 2026 : quatre critères, notés de 1 à 5.
+const CRITERES = [
+  { id: "exactitude", nom: "Exactitude", question: "Les faits, calculs et règles sont-ils justes ?" },
+  { id: "francais", nom: "Français", question: "La langue est-elle correcte, naturelle et au bon registre ?" },
+  { id: "consigne", nom: "Respect de la consigne", question: "Tout ce qui est demandé est-il là, au format demandé ?" },
+  { id: "utilite", nom: "Utilité en classe", question: "Un·e enseignant·e pourrait-il l'utiliser tel quel ou presque ?" },
+];
+const ECHELLE = "5 = utilisable tel quel ; 4 = petites retouches ; 3 = à retravailler ; 2 = défaut important ; 1 = erreurs graves ou hors sujet.";
+
+function notesDe(e) {
+  return CRITERES.map((c) => (e.notes ? e.notes[c.id] : null)).filter((v) => Number.isInteger(v));
+}
+
+function moyenne(valeurs) {
+  if (!valeurs.length) return null;
+  return (valeurs.reduce((a, b) => a + b, 0) / valeurs.length).toFixed(1).replace(".", ",");
+}
+
+function texteMoyenne(e) {
+  const v = notesDe(e);
+  if (!v.length) return "Pas encore noté";
+  return "Note moyenne : " + moyenne(v) + "/5" + (v.length < CRITERES.length ? " (" + v.length + " critère" + (v.length > 1 ? "s" : "") + " sur " + CRITERES.length + ")" : "");
+}
+
+function blocNotation(e, i) {
+  const bloc = document.createElement("div");
+  bloc.className = "notation";
+  const titre = document.createElement("p");
+  titre.className = "etiquette";
+  titre.textContent = "Votre évaluation de cette réponse (facultatif)";
+  const resume = document.createElement("p");
+  resume.className = "moyenne";
+  resume.textContent = texteMoyenne(e);
+  bloc.append(titre);
+
+  for (const c of CRITERES) {
+    const champ = document.createElement("fieldset");
+    champ.className = "critere";
+    const legende = document.createElement("legend");
+    const nom = document.createElement("strong");
+    nom.textContent = c.nom;
+    const question = document.createElement("span");
+    question.textContent = " " + c.question;
+    legende.append(nom, question);
+    const choix = document.createElement("div");
+    choix.className = "choix";
+    for (let v = 1; v <= 5; v++) {
+      const id = "note-" + i + "-" + c.id + "-" + v;
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "note-" + i + "-" + c.id;
+      radio.id = id;
+      radio.value = String(v);
+      radio.checked = !!e.notes && e.notes[c.id] === v;
+      // Un second clic sur la note choisie l'efface.
+      radio.addEventListener("click", () => {
+        e.notes = e.notes || {};
+        if (e.notes[c.id] === v) { delete e.notes[c.id]; radio.checked = false; } else { e.notes[c.id] = v; }
+        resume.textContent = texteMoyenne(e);
+        sauvegarder();
+      });
+      const etiquette = document.createElement("label");
+      etiquette.htmlFor = id;
+      etiquette.textContent = String(v);
+      choix.append(radio, etiquette);
+    }
+    champ.append(legende, choix);
+    bloc.append(champ);
+  }
+
+  const aide = document.createElement("p");
+  aide.className = "aide";
+  aide.textContent = ECHELLE;
+  const libelle = document.createElement("label");
+  libelle.htmlFor = "commentaire-" + i;
+  libelle.textContent = "Commentaire";
+  const commentaire = document.createElement("textarea");
+  commentaire.id = "commentaire-" + i;
+  commentaire.rows = 2;
+  commentaire.placeholder = "Erreurs repérées, points forts, ce qu'il faudrait retoucher…";
+  commentaire.value = e.commentaire || "";
+  commentaire.addEventListener("input", () => { e.commentaire = commentaire.value; sauvegarder(); });
+  bloc.append(aide, resume, libelle, commentaire);
+  return bloc;
+}
+
+function tableNotes(e) {
+  const frag = document.createDocumentFragment();
+  const v = notesDe(e);
+  const commentaire = (e.commentaire || "").trim();
+  if (!v.length && !commentaire) return frag;
+  const titre = document.createElement("p");
+  titre.className = "etiquette";
+  titre.textContent = "Évaluation du testeur";
+  const table = document.createElement("table");
+  table.className = "fiche";
+  const ligne = (k, val) => {
+    const tr = document.createElement("tr");
+    const th = document.createElement("th");
+    th.scope = "row";
+    th.textContent = k;
+    const td = document.createElement("td");
+    td.textContent = val;
+    tr.append(th, td);
+    table.append(tr);
+  };
+  for (const c of CRITERES) {
+    const n = e.notes ? e.notes[c.id] : null;
+    ligne(c.nom, Number.isInteger(n) ? n + "/5" : "non noté");
+  }
+  if (v.length) ligne("Note moyenne", moyenne(v) + "/5");
+  if (commentaire) ligne("Commentaire", commentaire);
+  frag.append(titre, table);
+  return frag;
+}
+
 function afficher() {
   const n = seq.echanges.length;
   const fini = n >= maxPrompts;
 
   el.echanges.replaceChildren(...seq.echanges.map((e, i) => {
     const li = document.createElement("li");
-    li.append(blocEchange(e, i, el.brut.checked));
+    li.append(blocEchange(e, i, el.brut.checked), blocNotation(e, i));
     return li;
   }));
 
@@ -194,6 +310,7 @@ function construireRapport() {
   r.append(h1);
 
   const total = seq.echanges.reduce((s, e) => s + (Number(e.secondes) || 0), 0);
+  const toutes = seq.echanges.flatMap(notesDe);
   const lignes = [
     ["Cas d'usage", seq.intitule.trim() || "(non renseigné)"],
     ["Modèle", seq.modele],
@@ -201,6 +318,7 @@ function construireRapport() {
     ["Date du test", formaterDate(seq.debut)],
     ["Nombre d'échanges", seq.echanges.length + " sur " + maxPrompts + " (1 prompt, " + (seq.echanges.length - 1) + " re-prompt" + (seq.echanges.length > 2 ? "s" : "") + ")"],
     ["Temps de réponse cumulé", total.toFixed(1).replace(".", ",") + " s"],
+    ["Note moyenne du testeur", toutes.length ? moyenne(toutes) + "/5 (" + toutes.length + " note" + (toutes.length > 1 ? "s" : "") + ")" : "(non noté)"],
     ["Consigne de cadrage", seq.cadrage.trim() || "(aucune)"],
   ];
   const table = document.createElement("table");
@@ -220,12 +338,13 @@ function construireRapport() {
   seq.echanges.forEach((e, i) => {
     const h2 = document.createElement("h2");
     h2.textContent = "Échange " + (i + 1) + " : " + nomEchange(i).toLowerCase();
-    r.append(h2, blocEchange(e, i, el.brut.checked));
+    r.append(h2, blocEchange(e, i, el.brut.checked), tableNotes(e));
   });
 
   const mention = document.createElement("p");
   mention.className = "mention";
-  mention.textContent = "Réponses générées par un modèle d'IA via Phoeniqs, reproduites sans retouche. À relire avant tout usage.";
+  mention.textContent = "Réponses générées par un modèle d'IA via Phoeniqs, reproduites sans retouche. À relire avant tout usage."
+    + (toutes.length ? " Échelle de notation : " + ECHELLE : "");
   r.append(mention);
 }
 

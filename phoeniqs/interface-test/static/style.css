@@ -161,6 +161,22 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .termine { margin: 0; font-weight: 600; }
 .pied .aide { margin-top: 10px; }
 
+.notation { margin-top: 12px; padding: 12px 14px; border: 1px dashed var(--bord); border-radius: 8px; }
+.notation .etiquette { margin-bottom: 8px; }
+.critere { border: 0; margin: 0 0 8px; padding: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; min-width: 0; }
+.critere legend { float: left; padding: 0; font-size: 0.92rem; flex: 1 1 260px; min-width: 0; }
+.critere legend span { color: var(--discret); }
+.choix { display: flex; gap: 6px; }
+.choix input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.choix label {
+  margin: 0; min-width: 38px; padding: 5px 0; text-align: center; font-weight: 600;
+  border: 1px solid var(--bord); border-radius: 6px; cursor: pointer; font-variant-numeric: tabular-nums;
+}
+.choix input:checked + label { background: var(--accent); border-color: var(--accent); color: var(--accent-texte); }
+.choix input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+.notation .moyenne { margin: 8px 0; font-weight: 600; }
+.notation label[for^="commentaire"] { margin-bottom: 0; }
+
 /* Le rapport n'apparaît qu'à l'impression (enregistrement en PDF). */
 .rapport { display: none; }
 
@@ -185,4 +201,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   .rapport .rendu pre { white-space: pre-wrap; overflow: visible; }
   .rapport .rendu tr, .rapport .rendu li { break-inside: avoid; }
   .rapport .mention { margin-top: 18pt; font-size: 9pt; color: #444; }
+  .rapport table.fiche { break-inside: avoid; }
+  .rapport table.fiche td { white-space: pre-wrap; }
+  .rapport .bulle-reponse + .etiquette { margin-top: 12pt; }
 }
