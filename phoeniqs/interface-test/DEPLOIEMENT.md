@@ -2,7 +2,7 @@
 
 Ce guide met l'interface en ligne sur l'offre « Hébergement Node.js » d'Infomaniak, pour que les testeurs y accèdent par une adresse web avec un code personnel. Il n'y a pas de serveur à administrer : le domaine, le HTTPS, le démarrage et les journaux se gèrent dans le Manager Infomaniak.
 
-Les étapes dans le Manager viennent de la documentation d'Infomaniak, consultée le 20.11.2026 ([créer un site Node.js](https://faq.infomaniak.com/2537), [modifier sa configuration](https://faq.infomaniak.com/2535)). Elles n'ont pas été déroulées sur un vrai compte : un libellé peut différer légèrement de ce que vous verrez.
+Les réglages de l'étape 4 sont ceux de la première mise en ligne, faite le 20.11.2026 sur `ia.eduvaud-test.ch`. Les étapes de commande et de création du site viennent de la documentation d'Infomaniak ([créer un site Node.js](https://faq.infomaniak.com/2537)) : un libellé peut différer légèrement de ce que vous verrez.
 
 ## Ce qu'il faut
 
@@ -47,37 +47,46 @@ https://gmeleder-lab:VOTRE_JETON@github.com/gmeleder-lab/travail-pro.git
 3. Choisissez **un projet avec technologies avancées**, puis **Suivant**.
 4. Choisissez **Node.js**. Gardez la version proposée si elle est égale ou supérieure à 18, puis **Suivant**.
 5. Choisissez le type de domaine et saisissez l'adresse du site, puis **Suivant**.
-6. Choisissez la **méthode personnalisée**, puis l'import par **Git**, et collez l'adresse du dépôt de l'étape 2.
+6. Choisissez la méthode de votre choix : le projet d'exemple de la méthode rapide convient, il sera remplacé à l'étape 4.
 
 ## Étape 4 : régler le lancement
 
-1. Dans le Manager, cliquez sur le nom du site, puis sur **Gérer les paramètres avancés**, puis sur l'onglet **Node.js**.
-2. **Dossier d'exécution** :
+Dans le Manager, cliquez sur le nom du site, puis sur **Gérer les paramètres avancés**, puis sur l'onglet **Node.js**. Remplissez les champs ainsi, puis cliquez sur **Enregistrer**.
+
+**Commande d'exécution** (à la place de `npm start`), sur une seule ligne, avec votre clé et la ligne de codes de l'étape 1 :
 
 ```
-./phoeniqs/interface-test
+cd travail-pro/phoeniqs/interface-test && PORT=3000 PHOENIQS_API_KEY="sk-…" CODES_ACCES="Marie Dupont:XXXX-XXXX-XXXX;Paul Martin:XXXX-XXXX-XXXX" node serveur.js
 ```
 
-3. **Commande de lancement**, sur une seule ligne, avec votre clé et la ligne de codes de l'étape 1 :
+**Port d'écoute** : `3000`, identique au `PORT=3000` de la commande d'exécution.
+
+**Commande de build** (à la place de `npm i`), avec l'adresse du dépôt de l'étape 2 :
 
 ```
-PHOENIQS_API_KEY="sk-…" CODES_ACCES="Marie Dupont:XXXX-XXXX-XXXX;Paul Martin:XXXX-XXXX-XXXX" node serveur.js
+[ -d travail-pro ] && git -C travail-pro pull || git clone https://gmeleder-lab:VOTRE_JETON@github.com/gmeleder-lab/travail-pro.git travail-pro
 ```
 
-4. **Port d'écoute** : gardez celui que le Manager propose. Le serveur lit le port transmis par Infomaniak, il n'y a rien à changer dans le code.
-5. **Commande de construction** : cochez la case et saisissez `git pull`. Elle servira aux mises à jour ; l'application n'a aucune dépendance à installer.
-6. Cliquez sur **Enregistrer**.
+Cette commande télécharge le dépôt la première fois, puis le met à jour les fois suivantes. L'application n'a aucune dépendance à installer.
 
-Pour limiter le nombre de demandes par testeur et par jour (100 par défaut), ajoutez `QUOTA_JOUR="50"` au début de la commande de lancement.
+Points d'attention, qui ont tous causé une erreur lors de la première mise en ligne :
+
+- Ne pas inverser les deux champs : la ligne qui finit par `node serveur.js` va dans **Commande d'exécution**.
+- `CODES_ACCES=` ne doit apparaître qu'une fois, avec un seul guillemet droit avant le premier nom et un seul après le dernier code. Sinon la console affiche « command not found ».
+- Ne pas publier de capture d'écran de ces champs : ils contiennent la clé, le jeton et les codes.
+
+Pour limiter le nombre de demandes par testeur et par jour (100 par défaut), ajoutez `QUOTA_JOUR="50"` avant `node serveur.js`.
+
+Sur le tableau de bord du site, cliquez ensuite sur **Build**, laissez **Non** pour `node_modules`, cochez la case de confirmation et lancez la construction. L'application redémarre toute seule quand elle est terminée.
 
 ## Étape 5 : activer le HTTPS et démarrer
 
 1. Sur le tableau de bord du site, activez le **certificat SSL**. Sans HTTPS, les codes et les prompts circuleraient en clair.
-2. Cliquez sur **Démarrer**.
+2. Cliquez sur **Redémarrer** si le Build ne l'a pas déjà fait.
 3. Ouvrez la console d'exécution du tableau de bord. Elle doit afficher :
 
 ```
-Banc de test Phoeniqs à l'écoute sur le port …
+Banc de test Phoeniqs à l'écoute sur le port 3000
 Accès par code personnel : 2 testeur(s), 100 demandes par jour chacun.
 ```
 
@@ -93,16 +102,18 @@ Accès par code personnel : 2 testeur(s), 100 demandes par jour chacun.
 | Ce que vous voyez | Cause probable | Quoi faire |
 | --- | --- | --- |
 | La console affiche « aucun code d'accès n'est défini » | `CODES_ACCES` est absent ou mal écrit dans la commande de lancement | Vérifiez les guillemets et le format `Nom:code;Nom:code` |
-| La console affiche « Cannot find module … serveur.js » | Le dossier d'exécution ne pointe pas au bon endroit | Remettez `./phoeniqs/interface-test` |
+| La console affiche « Cannot find module … serveur.js » ou « No such file or directory » | Le Build n'a pas encore téléchargé le dépôt | Lancez le Build et lisez sa console |
+| La console affiche « … : command not found » | Les guillemets de `CODES_ACCES` sont mal placés, ou `CODES_ACCES=` est écrit deux fois | Réécrivez cette partie comme à l'étape 4 |
+| `/api/sante` renvoie « Cannot GET /api/sante » | Le projet d'exemple d'Infomaniak tourne encore | Vérifiez la commande d'exécution, enregistrez, relancez le Build |
 | La page affiche « La clé d'API Phoeniqs n'est pas configurée » | `PHOENIQS_API_KEY` est absente de la commande de lancement | Ajoutez-la, enregistrez, redémarrez |
 | Un envoi affiche « Phoeniqs a refusé la clé d'API » | La clé est fausse ou ce n'est pas une clé `sk-` | Remplacez-la dans la commande de lancement |
-| L'import Git échoue | Le jeton GitHub est expiré ou n'a pas le droit **Contents : Read-only** | Créez un nouveau jeton (étape 2) |
+| Le Build échoue avec une erreur d'authentification | Le jeton GitHub est expiré ou n'a pas le droit **Contents : Read-only** | Créez un nouveau jeton (étape 2) |
 | Une erreur indique que le port est déjà utilisé | Un ancien processus tourne encore | Changez la version de Node.js, enregistrez, remettez la bonne version, redémarrez |
 
 ## Au quotidien
 
 - **Ajouter ou retirer un testeur** : modifiez `CODES_ACCES` dans la commande de lancement, enregistrez, puis redémarrez. Retirer une personne ne dérange pas les autres.
-- **Mettre à jour l'interface** : dans les paramètres avancés, lancez la construction (elle exécute `git pull`), puis redémarrez.
+- **Mettre à jour l'interface** : cliquez sur **Build** dans le tableau de bord. Il récupère la dernière version du dépôt et redémarre l'application.
 - **Suivre l'usage** : la console d'exécution indique, pour chaque demande, la date, le testeur, le modèle et le temps de réponse. Les prompts et les réponses n'y figurent pas.
 - **Arrêter les frais de Phoeniqs** : le bouton **Stop** du tableau de bord coupe l'accès de tout le monde immédiatement.
 
